@@ -1,3 +1,2 @@
 user-config.nix filter=userconfig
 modules/security/ssh-keys.nix filter=sshkeys
-hosts/default/hardware-configuration.nix filter=hardware
