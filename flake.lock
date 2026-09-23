@@ -189,7 +189,42 @@
         "type": "github"
       }
     },
+    "neodeploy": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1790173030,
+        "narHash": "sha256-dZKWr26KDD3vM6bXhmaIwuJuzCa6Xy/BSVA5nQ0Ar9k=",
+        "ref": "rust-gui",
+        "rev": "2a142ef7a494892c0f7ec22c6de583430a877247",
+        "revCount": 174,
+        "type": "git",
+        "url": "ssh://git@github.com/NeoMedSys/neodeploy"
+      },
+      "original": {
+        "ref": "rust-gui",
+        "type": "git",
+        "url": "ssh://git@github.com/NeoMedSys/neodeploy"
+      }
+    },
     "nixpkgs": {
+      "locked": {
+        "lastModified": 1790046670,
+        "narHash": "sha256-MYiI+CzL0tuWgRPjGsKCDHqYs2T3OzMlMQWOYWG0qso=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6774f7bc253789b113a4f39285dc0fa100abeacc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
       "locked": {
         "lastModified": 1780902259,
         "narHash": "sha256-q8yYEC5f1mFlQO9RGna4LTc9QrcvWunX6FYp83munkQ=",
@@ -205,7 +240,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_2": {
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1780453794,
         "narHash": "sha256-bXMRa9VTsHSPXL4Cw8R6JJLQeY3Y/IP4+YJCYVmQ7FY=",
@@ -221,7 +256,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_3": {
+    "nixpkgs_4": {
       "locked": {
         "lastModified": 1708566995,
         "narHash": "sha256-e/THimsoxxMAHSbwMKov5f5Yg+utTj6XVGEo24Lhx+0=",
@@ -240,7 +275,7 @@
     "nixvim": {
       "inputs": {
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "systems": "systems"
       },
       "locked": {
@@ -267,7 +302,8 @@
         "disko": "disko",
         "dms": "dms",
         "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs",
+        "neodeploy": "neodeploy",
+        "nixpkgs": "nixpkgs_2",
         "nixvim": "nixvim",
         "sops-nix": "sops-nix",
         "thunderbird-catppuccin": "thunderbird-catppuccin"
@@ -326,7 +362,7 @@
     "thunderbird-catppuccin": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_4"
       },
       "locked": {
         "lastModified": 1730465032,

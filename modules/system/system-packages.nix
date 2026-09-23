@@ -4,12 +4,23 @@ let
   sandboxed-frontend = pkgs.callPackage ../../packages/sandboxed-frontend.nix {};
   dms = inputs.dms.packages.${pkgs.system}.default;
   dgop = inputs.dgop.packages.${pkgs.system}.default;
+  neodeploy = inputs.neodeploy.packages.${pkgs.system}.default;
   ntl-daemon = pkgs.callPackage ../../packages/ntl-daemon.nix {};
   sandboxed-steam = pkgs.callPackage ../../packages/sandboxed-steam.nix {};
   sandboxed-edge = pkgs.callPackage ../../packages/sandboxed-edge.nix {};
   sandboxed-spotify = pkgs.callPackage ../../packages/sandboxed-spotify.nix {};
   sandboxed-teams = pkgs.callPackage ../../packages/sandboxed-teams.nix {};
   sandboxed-slack = pkgs.callPackage ../../packages/sandboxed-slack.nix {};
+  # quarto 1.9.37 emits pandoc 3.8's `syntax-highlighting` option, but nixpkgs
+  # ships pandoc 3.7.0.2, whose JSON parser rejects it. Rename it back to the
+  # 3.7 spelling. Remove this once nixpkgs takes pandoc >= 3.8.
+  # https://github.com/NixOS/nixpkgs/issues/519484
+  quarto = pkgs.quarto.overrideAttrs (old: {
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace bin/quarto.js \
+        --replace-fail "syntax-highlighting" "highlight-style"
+    '';
+  });
 in
 {
   # Global software packages to install
@@ -24,6 +35,7 @@ in
     # System utilities
     dms
     dgop
+    neodeploy
     quickshell
     direnv
     btop
@@ -172,6 +184,8 @@ in
 
     # Pandoc and live MD rendering script
     pandoc
+	marp-cli
+	quarto
     wkhtmltopdf
     typst
     tinymist
@@ -188,6 +202,7 @@ in
     inotify-tools
   ];
 
+  environment.sessionVariables.NEONERVOUS_ENDPOINT = "http://100.103.238.92:7777";
   # This registers the fonts with your system so applications can find them.
   fonts.packages = with pkgs; [
     fira-code

@@ -16,6 +16,7 @@
     danksearch.url = "github:AvengeMedia/danksearch";
     danksearch.inputs.nixpkgs.follows = "nixpkgs";
     thunderbird-catppuccin.url = "github:catppuccin/thunderbird";
+	neodeploy.url = "git+ssh://git@github.com/NeoMedSys/neodeploy?ref=rust-gui";
     catppuccin-firefox = {
       url = "github:catppuccin/firefox";
       flake = false;

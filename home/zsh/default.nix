@@ -129,7 +129,7 @@
     '';
 
     shellAliases = {
-      update = "sudo nixos-rebuild switch --flake";
+      update = "nixos-rebuild switch --sudo --flake";
       g = "git";
       gs = "git status";
       ga = "git add --all";
