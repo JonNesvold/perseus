@@ -376,6 +376,7 @@ in
   # ========================
   programs.git = {
     enable = true;
+	lfs.enable = true;
     config = {
       user.name = userConfig.gitName;
       user.email = userConfig.gitEmail;

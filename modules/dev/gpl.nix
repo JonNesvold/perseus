@@ -3,7 +3,7 @@ let
   devTools = userConfig.devTools;
   hasDevTool = tool: builtins.elem tool devTools;
   goPackages = with pkgs; [ go gopls ];
-  rustPackages = with pkgs; [ rustc cargo rust-analyzer clippy ];
+  rustPackages = with pkgs; [ rustc cargo rust-analyzer clippy rustfmt ];
   nodePkgs = with pkgs; [
     nodejs_22
     pnpm
