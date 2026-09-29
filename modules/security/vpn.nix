@@ -14,50 +14,42 @@
     wantedBy = [ "multi-user.target" ];
     serviceConfig.ExecStartPost = let
       script = pkgs.writeShellScript "mullvad-post-up" ''
+        set -eu
         ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.src_valid_mark=1
+        # wg-quick adds its two rules without a priority, so where they land depends
+        # on boot order. Pin them below Tailscale's 5210 so Tailscale's own
+        # encrypted traffic always leaves through Mullvad.
+        ${pkgs.iproute2}/bin/ip rule del not fwmark 0xca6c table 51820
+        ${pkgs.iproute2}/bin/ip rule add not fwmark 0xca6c table 51820 priority 5001
+        ${pkgs.iproute2}/bin/ip rule del table main suppress_prefixlength 0
+        ${pkgs.iproute2}/bin/ip rule add table main suppress_prefixlength 0 priority 5000
+        echo "mullvad-post-up: rules pinned at 5000/5001"
       '';
     in [ "+${script}" ];
   };
-  # Mullvad's wg-quick re-inserts a catch-all rule (not fwmark 0xca6c ->
-  # lookup 51820) in the 5000-5100 range on every reconnect, swallowing
-  # Tailscale's CGNAT range and the controller's advertised subnet into
-  # table 51820 and black-holing them. A one-shot ExecStartPost can't keep
-  # up — Mullvad re-inserts after it runs. This reconciler deletes any
-  # Mullvad-inserted lookup 52 rule for our CIDRs at any priority other
-  # than 100, then ensures ours exist at 100. Runs every 3s so a reconnect
-  # re-insert is corrected within 3s.
-  systemd.services.mullvad-route-fix = {
+  # wg-quick adds its rules without a priority, and the kernel slots such a rule
+  # directly below the lowest existing one, so no fixed priority stays ahead of
+  # Mullvad's catch-all (not fwmark 0xca6c -> lookup 51820). What wg-quick does
+  # guarantee is that its `lookup main suppress_prefixlength 0` rule sits right
+  # above that catch-all, and it routes anything in main more specific than the
+  # default. So the tailnet CIDRs live in main, bound to tailscale0's lifetime.
+  systemd.services.tailnet-main-route = {
+    description = "Route tailnet CIDRs via tailscale0 in the main table";
+    bindsTo = [ "sys-subsystem-net-devices-tailscale0.device" ];
+    after = [ "sys-subsystem-net-devices-tailscale0.device" ];
+    wantedBy = [ "sys-subsystem-net-devices-tailscale0.device" ];
     serviceConfig = {
       Type = "oneshot";
+      RemainAfterExit = true;
       ExecStart = let
-        script = pkgs.writeShellScript "mullvad-route-fix" ''
-          # Mullvad's catch-all rule (not fwmark 0xca6c lookup 51820) drifts
-          # across reconnects (seen at 44, 49) and shoves tailnet traffic into
-          # the tunnel. We anchor tailnet CIDRs at priority 10 — below Mullvad's
-          # floor (43) — pointing at table 52 (tailscale0-only). Purge any of our
-          # CIDR rules NOT at 10, then ensure ours exist at 10.
-          ${pkgs.iproute2}/bin/ip rule show \
-            | ${pkgs.gnugrep}/bin/grep -E "to (100.64.0.0/10|192.0.0.0/24) lookup (52|main)" \
-            | ${pkgs.gnugrep}/bin/grep -vE "lookup 52 .*priority 10( |$)" \
-            | while read -r line; do
-                prio=$(echo "$line" | ${pkgs.gnused}/bin/sed -n 's/.*priority \([0-9]*\).*/\1/p')
-                dst=$(echo "$line" | ${pkgs.gnused}/bin/sed -n 's/.*to \([^ ]*\) .*/\1/p')
-                tbl=$(echo "$line" | ${pkgs.gnused}/bin/sed -n 's/.*lookup \([a-z0-9]*\).*/\1/p')
-                ${pkgs.iproute2}/bin/ip rule del to "$dst" lookup "$tbl" priority "$prio" 2>/dev/null || true
-              done
-          ${pkgs.iproute2}/bin/ip rule show | ${pkgs.gnugrep}/bin/grep -q "to 100.64.0.0/10 lookup 52 priority 10" \
-            || ${pkgs.iproute2}/bin/ip rule add to 100.64.0.0/10 lookup 52 priority 10 2>/dev/null || true
-          ${pkgs.iproute2}/bin/ip rule show | ${pkgs.gnugrep}/bin/grep -q "to 192.0.0.0/24 lookup 52 priority 10" \
-            || ${pkgs.iproute2}/bin/ip rule add to 192.0.0.0/24 lookup 52 priority 10 2>/dev/null || true
+        script = pkgs.writeShellScript "tailnet-main-route" ''
+          set -eu
+          for cidr in 100.64.0.0/10 192.0.0.0/24; do
+            ${pkgs.iproute2}/bin/ip route replace "$cidr" dev tailscale0
+            echo "tailnet-main-route: $cidr -> tailscale0 (main)"
+          done
         '';
-      in "+${script}";
-    };
-  };
-  systemd.timers.mullvad-route-fix = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "10s";
-      OnUnitActiveSec = "3s";
+      in "${script}";
     };
   };
   environment.systemPackages = with pkgs; [
